@@ -1,0 +1,113 @@
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Contrôle avancé du Handy - Test de Connexion</title>
+  <style>
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 20px; background: linear-gradient(135deg, #e0eafc, #cfdef3); transition: background 0.5s, color 0.5s; }
+    body.dark { background: #121212; color: #e0e0e0; }
+    #app { max-width: 700px; margin: auto; background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); transition: background 0.5s, color 0.5s; }
+    body.dark #app { background: #1e1e1e; }
+    h1 { text-align: center; margin-bottom: 20px; }
+    label { font-weight: bold; margin-top: 10px; display: block; }
+    input, button, progress { width: 100%; margin-top: 5px; padding: 10px; border-radius: 8px; border: 1px solid #ccc; background: white; color: black; transition: background 0.5s, color 0.5s; }
+    body.dark input, body.dark button, body.dark progress { background: #2c2c2c; color: #e0e0e0; border: 1px solid #555; }
+    button { background-color: #007bff; color: white; font-weight: bold; border: none; }
+    button:hover { background-color: #0056b3; }
+    #status { margin-top: 20px; font-style: italic; text-align: center; }
+    .indicator { width: 12px; height: 12px; border-radius: 50%; display: inline-block; margin-right: 5px; }
+    #themeToggle { margin-top: 20px; background: #6c757d; }
+    #themeToggle:hover { background: #5a6268; }
+  </style>
+</head>
+<body>
+<div id="app">
+  <h1>Contrôle du Handy</h1>
+
+  <button id="themeToggle" onclick="toggleTheme()">Basculer Mode Sombre</button>
+
+  <label>Clé de connexion :</label>
+  <input type="text" id="connectionKey" placeholder="Entrez votre clé...">
+  <button onclick="connectHandy()">Se connecter</button>
+  <button onclick="testConnection()">Tester la connexion 🔍</button>
+
+  <div id="controls" style="display:none;">
+    <label>Vitesse (%)</label>
+    <input type="range" id="speed" min="0" max="100" value="50" onchange="updateMovement()">
+
+    <label>Amplitude (%)</label>
+    <input type="range" id="stroke" min="0" max="100" value="50" onchange="updateMovement()">
+
+    <label>URL du script (.funscript) :</label>
+    <input type="text" id="scriptUrl" placeholder="Entrez l'URL...">
+    <button onclick="loadScript()">Charger le script</button>
+
+    <button onclick="togglePlayPause()" id="playPauseBtn">Pause</button>
+    <button onclick="rewindScript()">Rebobiner</button>
+
+    <label>Progression du script :</label>
+    <progress id="scriptProgress" value="0" max="100"></progress>
+
+    <div style="display: flex; justify-content: space-between;">
+      <small id="elapsedTime">00:00</small>
+      <small id="totalTime">00:00</small>
+    </div>
+
+    <button onclick="stopMovement()">Stop</button>
+  </div>
+
+  <div id="status"><span class="indicator" id="indicator" style="background: red;"></span>Déconnecté</div>
+</div>
+
+<script>
+let baseUrl = "https://api.handyfeeling.com";
+let connectionKey = "";
+let liveUpdateInterval;
+let scriptProgressInterval;
+let scriptDuration = 0;
+let scriptStartTime = 0;
+let isPlaying = true;
+
+function toggleTheme() { document.body.classList.toggle('dark'); }
+
+function connectHandy() {
+  const inputKey = document.getElementById("connectionKey").value.trim();
+  if (inputKey.length < 5) {
+    alert("Veuillez entrer une clé Handy valide !");
+    return;
+  }
+  connectionKey = inputKey;
+  localStorage.setItem('handyKey', connectionKey);
+  document.getElementById("controls").style.display = "block";
+  document.getElementById("status").innerHTML = '<span class="indicator" style="background: green;"></span>Clé chargée: ' + connectionKey;
+}
+
+function testConnection() {
+  const inputKey = document.getElementById("connectionKey").value.trim();
+  if (inputKey.length < 5) {
+    alert("Veuillez entrer une clé Handy valide !");
+    return;
+  }
+  fetch(baseUrl + "/v2/handy/ping", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ connectionKey: inputKey })
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.result === "ok") {
+      document.getElementById("status").innerHTML = '<span class="indicator" style="background: green;"></span>Handy répond ! ✅';
+    } else {
+      document.getElementById("status").innerHTML = '<span class="indicator" style="background: red;"></span>Erreur de connexion ❌';
+    }
+  })
+  .catch(() => {
+    document.getElementById("status").innerHTML = '<span class="indicator" style="background: red;"></span>Impossible de contacter Handy ❌';
+  });
+}
+
+// (le reste du JS est standard pour les autres fonctions : updateMovement, loadScript, etc.)
+</script>
+</body>
+</html>
